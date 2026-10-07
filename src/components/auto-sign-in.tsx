@@ -8,7 +8,7 @@ export function AutoSignIn() {
   const { loaded, openSignIn } = useClerk();
 
   useEffect(() => {
-    if (loaded) openSignIn();
+    if (loaded) openSignIn({ forceRedirectUrl: "/dashboard" });
   }, [loaded, openSignIn]);
 
   return null;

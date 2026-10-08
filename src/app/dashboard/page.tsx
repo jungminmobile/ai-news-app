@@ -1,10 +1,13 @@
 import { auth } from "@clerk/nextjs/server";
-import { and, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
 import { AppHeader } from "@/components/app-header";
 import { CategoryBar, type CategoryFilter } from "@/components/category-bar";
 import { NewsCard } from "@/components/news-card";
+import { Pagination } from "@/components/pagination";
 import { db } from "@/db";
 import { articles, categories } from "@/db/schema";
+
+const PAGE_SIZE = 9;
 
 function parseFilter(value: string | string[] | undefined): CategoryFilter {
   if (value === "none") return "none";
@@ -12,11 +15,20 @@ function parseFilter(value: string | string[] | undefined): CategoryFilter {
   return "all";
 }
 
+function parsePage(value: string | string[] | undefined): number {
+  if (typeof value === "string" && /^\d+$/.test(value)) {
+    return Math.max(1, Number(value));
+  }
+  return 1;
+}
+
 export default async function DashboardPage({
   searchParams,
 }: PageProps<"/dashboard">) {
   const { userId } = await auth.protect();
-  const filter = parseFilter((await searchParams).category);
+  const sp = await searchParams;
+  const filter = parseFilter(sp.category);
+  const requestedPage = parsePage(sp.page);
 
   const categoryRows = await db
     .select()
@@ -31,11 +43,33 @@ export default async function DashboardPage({
         ? eq(articles.categoryId, filter)
         : undefined;
 
+  const where = and(eq(articles.userId, userId), categoryFilter);
+  const [{ total }] = await db
+    .select({ total: count() })
+    .from(articles)
+    .where(where);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  // 범위를 벗어난 page(삭제·필터 변경 후 등)는 마지막 페이지로 맞춘다.
+  const page = Math.min(requestedPage, totalPages);
+
   const rows = await db
     .select()
     .from(articles)
-    .where(and(eq(articles.userId, userId), categoryFilter))
-    .orderBy(desc(sql`coalesce(${articles.publishedAt}, ${articles.savedAt})`));
+    .where(where)
+    .orderBy(
+      desc(sql`coalesce(${articles.publishedAt}, ${articles.savedAt})`),
+      desc(articles.id),
+    )
+    .limit(PAGE_SIZE)
+    .offset((page - 1) * PAGE_SIZE);
+
+  function pageHref(p: number) {
+    const params = new URLSearchParams();
+    if (filter !== "all") params.set("category", String(filter));
+    if (p > 1) params.set("page", String(p));
+    const qs = params.toString();
+    return qs ? `/dashboard?${qs}` : "/dashboard";
+  }
 
   const categoryNames = new Map(categoryRows.map((c) => [c.id, c.name]));
 
@@ -63,6 +97,7 @@ export default async function DashboardPage({
             ))}
           </ul>
         )}
+        <Pagination page={page} totalPages={totalPages} hrefFor={pageHref} />
       </main>
     </>
   );

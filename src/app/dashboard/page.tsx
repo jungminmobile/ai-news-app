@@ -1,11 +1,11 @@
 import { auth } from "@clerk/nextjs/server";
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { AppHeader } from "@/components/app-header";
 import { CategoryBar, type CategoryFilter } from "@/components/category-bar";
 import { NewsCard } from "@/components/news-card";
 import { Pagination } from "@/components/pagination";
 import { db } from "@/db";
-import { articles, categories } from "@/db/schema";
+import { articles, categories, notionSaves } from "@/db/schema";
 
 const PAGE_SIZE = 9;
 
@@ -71,6 +71,19 @@ export default async function DashboardPage({
     return qs ? `/dashboard?${qs}` : "/dashboard";
   }
 
+  const savedRows = rows.length
+    ? await db
+        .select({ url: notionSaves.articleUrl })
+        .from(notionSaves)
+        .where(
+          and(
+            eq(notionSaves.userId, userId),
+            inArray(notionSaves.articleUrl, rows.map((a) => a.url)),
+          ),
+        )
+    : [];
+  const notionSavedUrls = new Set(savedRows.map((r) => r.url));
+
   const categoryNames = new Map(categoryRows.map((c) => [c.id, c.name]));
 
   return (
@@ -90,6 +103,7 @@ export default async function DashboardPage({
               <NewsCard
                 key={a.id}
                 article={a}
+                notionSaved={notionSavedUrls.has(a.url)}
                 categoryName={
                   a.categoryId ? (categoryNames.get(a.categoryId) ?? null) : null
                 }

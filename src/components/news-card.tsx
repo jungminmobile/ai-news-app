@@ -1,3 +1,4 @@
+import { SaveToNotionButton } from "@/components/save-to-notion-button";
 import type { Article } from "@/db/schema";
 
 const dateFormat = new Intl.DateTimeFormat("ko-KR", {
@@ -18,9 +19,11 @@ const buttonBase =
 export function NewsCard({
   article,
   categoryName,
+  notionSaved,
 }: {
   article: Article;
   categoryName: string | null;
+  notionSaved: boolean;
 }) {
   const date = article.publishedAt ?? article.savedAt;
 
@@ -49,20 +52,7 @@ export function NewsCard({
       </p>
 
       <div className="mt-auto flex gap-2 pt-4">
-        <button
-          type="button"
-          disabled
-          className={`${buttonBase} bg-slate-100 text-slate-500 dark:bg-gray-800 dark:text-slate-400`}
-        >
-          저장됨
-        </button>
-        <button
-          type="button"
-          disabled
-          className={`${buttonBase} border border-slate-200 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-gray-700`}
-        >
-          Notion 저장
-        </button>
+        <SaveToNotionButton articleId={article.id} initialSaved={notionSaved} />
         <a
           href={article.url}
           target="_blank"

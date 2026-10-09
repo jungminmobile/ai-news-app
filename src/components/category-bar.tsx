@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AddCategoryButton } from "@/components/add-category-button";
+import { SearchBar } from "@/components/search-bar";
 import type { Category } from "@/db/schema";
 
 export type CategoryFilter = "all" | "none" | number;
@@ -33,29 +34,42 @@ function Chip({
 export function CategoryBar({
   categories,
   selected,
+  query = "",
 }: {
   categories: Category[];
   selected: CategoryFilter;
+  query?: string;
 }) {
+  // 카테고리를 바꿔도 검색어는 유지한다.
+  const q = query ? `q=${encodeURIComponent(query)}` : "";
+  const hrefFor = (category?: string) => {
+    const qs = [category ? `category=${category}` : "", q]
+      .filter(Boolean)
+      .join("&");
+    return qs ? `/dashboard?${qs}` : "/dashboard";
+  };
   return (
     <div className="sticky top-14 z-10 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-gray-800 dark:bg-gray-900/80">
-      <div className="mx-auto flex w-full max-w-6xl items-center gap-2 overflow-x-auto px-4 py-3 sm:px-6">
-        <Chip href="/dashboard" selected={selected === "all"}>
-          전체
-        </Chip>
-        {categories.map((c) => (
-          <Chip
-            key={c.id}
-            href={`/dashboard?category=${c.id}`}
-            selected={selected === c.id}
-          >
-            {c.name}
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:px-6">
+        <div className="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+          <Chip href={hrefFor()} selected={selected === "all"}>
+            전체
           </Chip>
-        ))}
-        <Chip href="/dashboard?category=none" selected={selected === "none"}>
-          미분류
-        </Chip>
-        <AddCategoryButton />
+          {categories.map((c) => (
+            <Chip
+              key={c.id}
+              href={hrefFor(String(c.id))}
+              selected={selected === c.id}
+            >
+              {c.name}
+            </Chip>
+          ))}
+          <Chip href={hrefFor("none")} selected={selected === "none"}>
+            미분류
+          </Chip>
+          <AddCategoryButton />
+        </div>
+        <SearchBar query={query} category={selected} />
       </div>
     </div>
   );

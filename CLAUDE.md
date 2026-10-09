@@ -17,6 +17,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 - `npm run build` — 프로덕션 빌드 (타입 체크 포함)
 - `npm run lint` — ESLint (flat config, `eslint.config.mjs`)
 
+### 슬래시 명령 (`.claude/commands/`)
+
+- `/news-workflow [브랜치 이름]` — 새 기능 개발 워크플로. main 확인 → 브랜치 생성(이름이 없으면 영어 소문자-하이픈으로 제안) → 개발 → '완료'/'done' 입력 시 변경 파일 목록·커밋 메시지 제안 → 확인 후 커밋하고 main에 병합 → 작업 요약. push와 브랜치 삭제는 요청 전에는 하지 않는다.
+
 ## 범위
 
 - 포함: 로그인, 뉴스 가져오기, 번역·요약·자동 분류, 카드 표시, 카테고리 필터, 카테고리 관리, 저장하기, Notion 저장, 원문보기, 저장한 뉴스 목록

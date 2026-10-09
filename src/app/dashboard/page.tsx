@@ -1,5 +1,5 @@
 import { auth } from "@clerk/nextjs/server";
-import { and, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, count, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { AppHeader } from "@/components/app-header";
 import { CategoryBar, type CategoryFilter } from "@/components/category-bar";
 import { NewsCard } from "@/components/news-card";
@@ -15,6 +15,10 @@ function parseFilter(value: string | string[] | undefined): CategoryFilter {
   return "all";
 }
 
+function parseQuery(value: string | string[] | undefined): string {
+  return typeof value === "string" ? value.trim().slice(0, 100) : "";
+}
+
 function parsePage(value: string | string[] | undefined): number {
   if (typeof value === "string" && /^\d+$/.test(value)) {
     return Math.max(1, Number(value));
@@ -28,6 +32,7 @@ export default async function DashboardPage({
   const { userId } = await auth.protect();
   const sp = await searchParams;
   const filter = parseFilter(sp.category);
+  const query = parseQuery(sp.q);
   const requestedPage = parsePage(sp.page);
 
   const categoryRows = await db
@@ -43,7 +48,17 @@ export default async function DashboardPage({
         ? eq(articles.categoryId, filter)
         : undefined;
 
-  const where = and(eq(articles.userId, userId), categoryFilter);
+  // LIKE 와일드카드(%, _, \)는 이스케이프해 글자 그대로 검색한다.
+  const pattern = `%${query.replace(/[\\%_]/g, "\\$&")}%`;
+  const searchFilter = query
+    ? or(
+        ilike(articles.titleKo, pattern),
+        ilike(articles.titleEn, pattern),
+        ilike(articles.summaryKo, pattern),
+      )
+    : undefined;
+
+  const where = and(eq(articles.userId, userId), categoryFilter, searchFilter);
   const [{ total }] = await db
     .select({ total: count() })
     .from(articles)
@@ -66,6 +81,7 @@ export default async function DashboardPage({
   function pageHref(p: number) {
     const params = new URLSearchParams();
     if (filter !== "all") params.set("category", String(filter));
+    if (query) params.set("q", query);
     if (p > 1) params.set("page", String(p));
     const qs = params.toString();
     return qs ? `/dashboard?${qs}` : "/dashboard";
@@ -89,13 +105,15 @@ export default async function DashboardPage({
   return (
     <>
       <AppHeader />
-      <CategoryBar categories={categoryRows} selected={filter} />
+      <CategoryBar categories={categoryRows} selected={filter} query={query} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         {rows.length === 0 ? (
           <p className="py-24 text-center text-slate-500 dark:text-slate-400">
-            {filter === "all"
-              ? "저장한 뉴스가 없어요."
-              : "이 카테고리에는 뉴스가 없어요."}
+            {query
+              ? `"${query}"에 대한 검색 결과가 없어요.`
+              : filter === "all"
+                ? "저장한 뉴스가 없어요."
+                : "이 카테고리에는 뉴스가 없어요."}
           </p>
         ) : (
           <ul className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">

@@ -1,3 +1,4 @@
+import { DeleteArticleButton } from "@/components/delete-article-button";
 import { SaveToNotionButton } from "@/components/save-to-notion-button";
 import type { Article } from "@/db/schema";
 
@@ -39,9 +40,12 @@ export function NewsCard({
             미분류
           </span>
         )}
-        <span className="text-xs text-slate-500 dark:text-slate-400">
-          {article.source} · {formatDate(date)}
-        </span>
+        <div className="flex items-center gap-1">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
+            {article.source} · {formatDate(date)}
+          </span>
+          <DeleteArticleButton articleId={article.id} />
+        </div>
       </div>
 
       <h2 className="line-clamp-2 break-keep text-base font-semibold leading-snug">

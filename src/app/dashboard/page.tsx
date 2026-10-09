@@ -26,9 +26,7 @@ function parsePage(value: string | string[] | undefined): number {
   return 1;
 }
 
-export default async function DashboardPage({
-  searchParams,
-}: PageProps<"/dashboard">) {
+export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const { userId } = await auth.protect();
   const sp = await searchParams;
   const filter = parseFilter(sp.category);
@@ -59,10 +57,12 @@ export default async function DashboardPage({
     : undefined;
 
   const where = and(eq(articles.userId, userId), categoryFilter, searchFilter);
-  const [{ total }] = await db
-    .select({ total: count() })
+  const [{ total }] = await db.select({ total: count() }).from(articles).where(where);
+  // 배지에 쓰는 전체 개수는 카테고리·검색 필터와 무관하다.
+  const [{ allCount }] = await db
+    .select({ allCount: count() })
     .from(articles)
-    .where(where);
+    .where(eq(articles.userId, userId));
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   // 범위를 벗어난 page(삭제·필터 변경 후 등)는 마지막 페이지로 맞춘다.
   const page = Math.min(requestedPage, totalPages);
@@ -71,10 +71,7 @@ export default async function DashboardPage({
     .select()
     .from(articles)
     .where(where)
-    .orderBy(
-      desc(sql`coalesce(${articles.publishedAt}, ${articles.savedAt})`),
-      desc(articles.id),
-    )
+    .orderBy(desc(sql`coalesce(${articles.publishedAt}, ${articles.savedAt})`), desc(articles.id))
     .limit(PAGE_SIZE)
     .offset((page - 1) * PAGE_SIZE);
 
@@ -94,7 +91,10 @@ export default async function DashboardPage({
         .where(
           and(
             eq(notionSaves.userId, userId),
-            inArray(notionSaves.articleUrl, rows.map((a) => a.url)),
+            inArray(
+              notionSaves.articleUrl,
+              rows.map((a) => a.url),
+            ),
           ),
         )
     : [];
@@ -107,6 +107,9 @@ export default async function DashboardPage({
       <AppHeader />
       <CategoryBar categories={categoryRows} selected={filter} query={query} />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <p className="mb-4 inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-sm font-medium text-indigo-700 dark:bg-indigo-950 dark:text-indigo-300">
+          총 {allCount}개의 뉴스
+        </p>
         {rows.length === 0 ? (
           <p className="py-24 text-center text-slate-500 dark:text-slate-400">
             {query
@@ -122,9 +125,7 @@ export default async function DashboardPage({
                 key={a.id}
                 article={a}
                 notionSaved={notionSavedUrls.has(a.url)}
-                categoryName={
-                  a.categoryId ? (categoryNames.get(a.categoryId) ?? null) : null
-                }
+                categoryName={a.categoryId ? (categoryNames.get(a.categoryId) ?? null) : null}
               />
             ))}
           </ul>

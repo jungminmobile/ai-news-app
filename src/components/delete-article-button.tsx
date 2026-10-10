@@ -35,8 +35,10 @@ export function DeleteArticleButton({ articleId }: { articleId: number }) {
       disabled={loading}
       aria-label="뉴스 삭제"
       title={error ?? "삭제"}
-      className={`-mr-1.5 -mt-1 flex size-8 shrink-0 items-center justify-center rounded-lg text-lg leading-none transition hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-800 ${
-        error ? "text-red-700 dark:text-red-400" : "text-slate-500 dark:text-slate-400"
+      className={`-mr-1.5 -mt-1.5 flex size-8 shrink-0 items-center justify-center rounded-lg text-lg leading-none transition hover:bg-slate-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-gray-800 ${
+        error
+          ? "text-red-700 dark:text-red-400"
+          : "text-slate-500 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 dark:text-slate-400"
       }`}
     >
       <span aria-hidden>×</span>

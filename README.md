@@ -103,3 +103,8 @@ src/
 
 - [PRD.md](PRD.md) — 제품 요구사항
 - [ui.md](ui.md) — UI 가이드
+
+## 사용한 플러그인
+
+- Frontend Design: UI 디자인 품질 향상
+- commit-commands: 깃 워크플로 자동화

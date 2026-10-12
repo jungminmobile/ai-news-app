@@ -21,7 +21,7 @@
 | 포인트(Primary) | `indigo-600` | `indigo-400` | `bg-indigo-600 hover:bg-indigo-700` |
 | 선택된 칩 | `indigo-600` 배경 + 흰 글자 | 동일 | — |
 
-- 다크 모드는 `prefers-color-scheme`를 따른다(현재 `globals.css`와 동일).
+- 다크 모드는 `<html class="dark">` 클래스 기준이다(`globals.css`의 `@custom-variant dark`). 헤더 오른쪽 끝의 `ThemeToggle`로 전환하고 선택은 localStorage(`theme`)에 저장한다. 저장된 값이 없으면 `prefers-color-scheme`를 따른다.
 - 모서리: 카드 `rounded-xl`, 버튼·칩 `rounded-lg` / `rounded-full`.
 - 그림자: 카드는 기본 `shadow-sm`, hover 시 `shadow-md`까지만.
 

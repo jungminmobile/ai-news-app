@@ -1,5 +1,6 @@
 import { UserButton } from "@clerk/nextjs";
 import { FetchNewsButton } from "./fetch-news-button";
+import { ThemeToggle } from "./theme-toggle";
 
 export function AppHeader() {
   return (
@@ -9,6 +10,7 @@ export function AppHeader() {
         <nav className="flex items-center gap-2">
           <FetchNewsButton />
           <UserButton />
+          <ThemeToggle />
         </nav>
       </div>
     </header>
